@@ -1,35 +1,22 @@
 services:
   - type: web
-    name: odia-ai-tts
+    name: odia-tts-gateway
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:app -b 0.0.0.0:$PORT
     envVars:
-      - key: ENVIRONMENT
+      - key: FLASK_ENV
         value: production
-      - key: PORT
-        value: 5000
       - key: SECRET_KEY
-        generateValue: true
-      - key: DATABASE_URL
-        value: sqlite:///./odia_tts.db
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: odia-redis
-          property: connectionString
-      - key: ADMIN_BEARER_TOKEN
-        generateValue: true
-      - key: RATE_LIMIT_PER_MINUTE
-        value: 100
-      - key: MAX_TEXT_LENGTH
-        value: 1000
-    healthCheckPath: /api/health
-    disk:
-      name: odia-tts-disk
-      mountPath: /opt/render/project/src
-      sizeGB: 1
-    
-  - type: redis
-    name: odia-redis
-    ipAllowList: []
+        value: odia-super-secret-2025
+      - key: KEY_PEPPER
+        value: odia-pepper-2025
+      - key: ADMIN_BEARER
+        value: odia-admin-2025
+      - key: REQUIRE_KEY_FOR_SPEAK
+        value: "1"
+      - key: DEV_FALLBACK_AUDIO
+        value: "0"
+      - key: PORT
+        value: "10000"
