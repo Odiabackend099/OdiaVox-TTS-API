@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ODIA AI TTS - Nigerian Voice Technology Platform</title>
+    <style>
+      :root{--bg:#0f1020;--card:#171833;--edge:#2a2c5a;--fg:#fff;--mut:#d0d4ff;--brand:#5B5BD6;--pill:#aab1ff}
+      *{box-sizing:border-box} body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--fg)}
+      a{color:#9fb3ff}
+      .wrap{max-width:1000px;margin:0 auto;padding:28px}
+      .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+      .glass{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--edge);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+      .card{padding:20px}
+      h1{font-size:28px;margin:6px 0 0} p.lead{color:var(--mut);margin:8px 0 16px}
+      input,button,select{font-size:16px;border-radius:12px;border:1px solid var(--edge);background:#10122b;color:var(--fg);padding:12px 14px}
+      button{cursor:pointer;background:var(--brand);border-color:var(--brand)} button:hover{filter:brightness(1.1)}
+      .grid{display:grid;grid-template-columns:1fr auto;gap:10px}
+      .row{display:flex;gap:10px;flex-wrap:wrap}
+      audio{width:100%;margin-top:12px}
+      small{color:#9aa0ff}
+      .pill{display:inline-block;padding:6px 10px;border:1px solid var(--edge);border-radius:999px;color:var(--pill);margin:4px 6px 0 0}
+      .mut{color:var(--mut)}
+      @media(max-width:900px){.hero{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div class="card glass">
+          <h1>ODIA AI TTS</h1>
+          <p class="lead">Nigerian voice technology platform. Paste your API key, type a message, and hear Lexi speak.</p>
+          <div style="margin-top:10px">
+            <div class="grid">
+              <input id="apiKey" placeholder="x-api-key (saved locally)" />
+              <button id="saveKey">Save key</button>
+            </div>
+            <div class="grid" style="margin-top:10px">
+              <input id="text" placeholder="Type here… e.g. &quot;How market?&quot;" />
+              <button id="send">Send</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <select id="voice">
+                <option value="female" selected>Female</option>
+                <option value="male">Male</option>
+              </select>
+              <button id="play">Play last</button>
+              <button id="clear">Clear cache</button>
+            </div>
+            <audio id="player" controls></audio>
+            <div id="reply" style="margin-top:8px;"></div>
+            <div style="margin-top:12px"><small>Last 5 audios:</small> <span id="cache"></span></div>
+          </div>
+        </div>
+        <div class="card glass">
+          <h2 style="margin:0 0 8px">Admin: Create API Key</h2>
+          <p class="mut" style="margin-top:0">Use your admin bearer to mint a client key for testing.</p>
+          <div class="grid">
+            <input id="admin" placeholder="Authorization: Bearer &lt;token&gt;" />
+            <button id="create">Create key</button>
+          </div>
+          <div id="adminOut" class="mut" style="margin-top:10px"></div>
+          <hr style="border-color:var(--edge);margin:20px 0">
+          <p class="mut">Docs: <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a> • <a href="/public/agent.html">Classic tester</a></p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = s => document.querySelector(s);
+      const KEY="odiadev_api_key", CACHE="odiadev_tts_cache";
+      const getKey=()=>localStorage.getItem(KEY)||"";
+      const setKey=v=>{localStorage.setItem(KEY,v||"");$("#apiKey").value=v||"";};
+
+      const getCache=()=>JSON.parse(localStorage.getItem(CACHE)||"[]");
+      const setCache=a=>{localStorage.setItem(CACHE,JSON.stringify(a.slice(0,5)));renderCache();}
+      function renderCache(){const list=getCache();const wrap=$("#cache");wrap.innerHTML="";list.forEach((u,i)=>{const a=document.createElement("a");a.href=u;a.textContent="audio "+(i+1);a.className="pill";a.onclick=e=>{e.preventDefault(); play(u)}; wrap.appendChild(a);});}
+      function play(url){const p=$("#player"); p.src=url; p.play().catch(()=>{});}
+
+      $("#saveKey").onclick=()=>setKey($("#apiKey").value.trim());
+      $("#apiKey").value=getKey();
+
+      $("#send").onclick=async()=>{
+        const text=$("#text").value.trim(); if(!text) return;
+        $("#reply").textContent="Thinking...";
+        const headers={"Content-Type":"application/json"}; const apiKey=getKey(); if(apiKey) headers["x-api-key"]=apiKey;
+        const r=await fetch("/agent",{method:"POST",headers,body:JSON.stringify({text})});
+        const o=await r.json(); const msg=o.reply||text; $("#reply").textContent=msg;
+        const v=$("#voice").value;
+        const a=await fetch("/speak?text="+encodeURIComponent(msg)+"&voice="+encodeURIComponent(v),{headers});
+        const b=await a.blob(); const url=URL.createObjectURL(b); play(url); const list=getCache(); list.unshift(url); setCache(list);
+      };
+
+      $("#play").onclick=()=>{const l=getCache(); if(l.length) play(l[0]);};
+      $("#clear").onclick=()=>{localStorage.removeItem(CACHE); renderCache();};
+
+      $("#create").onclick=async()=>{
+        const tok=$("#admin").value.trim(); if(!tok) return;
+        const r=await fetch("/create-api-key",{method:"POST",headers:{Authorization:tok,"Content-Type":"application/json"},body:'{"name":"Web UI"}'});
+        const o=await r.json();
+        $("#adminOut").textContent=JSON.stringify(o,null,2);
+        if(o.api_key){ setKey(o.api_key); }
+      };
+
+      renderCache();
+    </script>
+  </body>
+</html>

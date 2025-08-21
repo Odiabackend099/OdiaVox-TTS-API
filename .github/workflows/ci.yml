@@ -1,0 +1,13 @@
+name: CI - ODIADEV TTS
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: nohup gunicorn -b 127.0.0.1:8000 app:app >/dev/null 2>&1 & sleep 2
+      - run: curl -sSf http://127.0.0.1:8000/health
+      - run: curl -sSf -X POST http://127.0.0.1:8000/agent -H "Content-Type: application/json" -d '{"text":"Hello"}'

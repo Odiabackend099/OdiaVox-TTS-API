@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: odia-ai-tts
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: 5000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./odia_tts.db
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: odia-redis
+          property: connectionString
+      - key: ADMIN_BEARER_TOKEN
+        generateValue: true
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 100
+      - key: MAX_TEXT_LENGTH
+        value: 1000
+    healthCheckPath: /api/health
+    disk:
+      name: odia-tts-disk
+      mountPath: /opt/render/project/src
+      sizeGB: 1
+    
+  - type: redis
+    name: odia-redis
+    ipAllowList: []
