@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: ./start.sh
+    startCommand: python app.py
     envVars:
       - key: FLASK_ENV
         value: production
@@ -15,6 +15,12 @@ services:
       - key: ADMIN_BEARER
         value: odia-admin-2025
       - key: REQUIRE_KEY_FOR_SPEAK
-        value: "1"
+        value: "0"  # Set to 0 for testing, 1 for production
       - key: DEV_FALLBACK_AUDIO
-        value: "0"
+        value: "1"  # Enable fallback audio
+      - key: ODIA_TTS_URL
+        value: "https://odia-tts-render.onrender.com/tts"
+      - key: DEFAULT_RATE_LIMIT_PER_MIN
+        value: "120"
+      - key: DEFAULT_TOTAL_QUOTA
+        value: "0"  # 0 means unlimited
