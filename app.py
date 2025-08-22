@@ -123,11 +123,11 @@ def gateway():
     text=(p.get("text") or "").strip(); voice=p.get("voice") or "female"
     if not text: return jsonify(error="Text is required"), 400
     
-    # ACTUALLY GENERATE AUDIO - THE FIX!
+    # ACTUALLY GENERATE REAL AUDIO - THIS IS THE FIX!
     audio_url = None
     try:
         if ODIA_TTS_URL:
-            print(f"Calling TTS service: {ODIA_TTS_URL}")
+            print(f"🔄 Calling TTS service: {ODIA_TTS_URL}")
             r = requests.post(ODIA_TTS_URL, json={"text": text, "voice": voice}, timeout=45)
             r.raise_for_status()
             
